@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chamada – Exercício de Campanha Perseu</title>
+<style>
+  :root{--verde:#4B5320;--verde2:#eef0e4;--verm:#b42318;--verm2:#fdecea;--borda:#d0d4c4;--txt:#1d1d1b;--sub:#5f6355}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--txt);background:#f7f7f3}
+  header{background:var(--verde);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:5}
+  h1{font-size:16px;margin:0;text-align:center;letter-spacing:.3px}
+  .resumo{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+  .pill{background:rgba(255,255,255,.15);border-radius:999px;padding:5px 12px;font-size:13px;font-weight:bold}
+  .pill.f{background:#fff;color:var(--verm)}
+
+  .postos-toggle{text-align:center;margin-top:8px}
+  .postos-toggle button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer}
+  .postos-box{display:none;max-width:760px;margin:8px auto 0;background:rgba(255,255,255,.08);border-radius:8px;padding:8px}
+  .postos-box.on{display:block}
+  table.postos{width:100%;border-collapse:collapse;font-size:12px}
+  table.postos th,table.postos td{padding:4px 6px;text-align:center;border-bottom:1px solid rgba(255,255,255,.15)}
+  table.postos th{font-weight:bold;color:#fff}
+  table.postos td{color:#fff}
+  table.postos td.nomeposto{text-align:left}
+
+  .acoes{display:flex;gap:8px;padding:10px 12px;max-width:760px;margin:0 auto}
+  button{font:inherit;cursor:pointer}
+  .btn{flex:1;border:1px solid var(--verde);background:#fff;color:var(--verde);border-radius:8px;padding:9px 8px;font-size:13px;font-weight:bold}
+  .btn.prim{background:var(--verde);color:#fff}
+  .btn:active{transform:scale(.98)}
+  #status{text-align:center;font-size:12px;color:var(--sub);padding:0 12px 6px}
+  ul{list-style:none;margin:0 auto;padding:0 10px 30px;max-width:760px}
+  li{background:#fff;border:1px solid var(--borda);border-radius:10px;margin:6px 0;padding:10px 10px 10px 8px}
+  li.falta{background:var(--verm2);border-color:#f3b8b2}
+  .linha{display:flex;align-items:center;gap:8px}
+  .ord{width:26px;text-align:center;color:var(--sub);font-size:13px;flex:none}
+  .info{flex:1;min-width:0}
+  .posto{font-size:12px;color:var(--sub)}
+  .nome{font-size:14px;line-height:1.25;word-wrap:break-word}
+  .tog{flex:none;min-width:84px;border-radius:8px;padding:9px 6px;font-size:13px;font-weight:bold;border:1px solid var(--verde);background:var(--verde2);color:var(--verde)}
+  li.falta .tog{background:var(--verm);border-color:var(--verm);color:#fff}
+  .dest{display:none;margin:8px 0 0 34px}
+  li.falta .dest{display:block}
+  .dest input{width:100%;padding:9px 10px;border:1px solid #e3a49d;border-radius:8px;font:inherit;font-size:14px;background:#fff}
+  .dlg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:10;padding:16px}
+  .dlg.on{display:flex}
+  .dlg .box{background:#fff;border-radius:12px;padding:16px;max-width:340px;width:100%}
+  .dlg p{margin:0 0 14px;font-size:14px}
+  .dlg .row{display:flex;gap:8px}
+  #copiado{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:8px 14px;border-radius:8px;font-size:13px;display:none;z-index:11}
+</style>
+</head>
+<body>
+<header>
+  <h1>EXERCÍCIO DE CAMPANHA PERSEU DA CIA C / 2ª DE</h1>
+  <div class="resumo">
+    <span class="pill" id="cTotal"></span>
+    <span class="pill" id="cPres"></span>
+    <span class="pill f" id="cFalta"></span>
+  </div>
+  <div class="postos-toggle">
+    <button id="bPostos">Ver quantidade por posto/graduação ▾</button>
+  </div>
+  <div class="postos-box" id="postosBox">
+    <table class="postos">
+      <thead><tr><th>Posto/Grad</th><th>Total</th><th>Pres.</th><th>Falta</th></tr></thead>
+      <tbody id="postosBody"></tbody>
+    </table>
+  </div>
+</header>
+<div class="acoes">
+  <button class="btn prim" id="bPdf">Compartilhar PDF</button>
+  <button class="btn" id="bCopiar">Copiar resumo</button>
+  <button class="btn" id="bLimpar">Limpar faltas</button>
+</div>
+<div id="status">Carregando…</div>
+<ul id="lista"></ul>
+
+<div class="dlg" id="dlg"><div class="box">
+  <p>Tirar todas as faltas e apagar os destinos?</p>
+  <div class="row"><button class="btn" id="dNao">Cancelar</button><button class="btn prim" id="dSim">Limpar</button></div>
+</div></div>
+<div id="copiado">Resumo copiado</div>
+
+<datalist id="sug">
+  <option value="Dispensado"><option value="Férias"><option value="Baixado"><option value="Missão"><option value="Serviço"><option value="Licença"><option value="Curso"><option value="Atestado médico">
+</datalist>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const MILITARES = [["Maj", "JHONATAN *BORGES* PINTO"], ["2º Ten", "NÍCHOLAS RAMOS *ROSSI*"], ["2º Ten", "GUSTAVO IMPERATRICE *BARROSO*"], ["S Ten", "ARTHUR SANTOS *BAUMGARTNER*"], ["S Ten", "MARCELO MACHADO *DAMASCENO*"], ["1º Sgt", "*DANILO MENDES* DE MORAES"], ["2º Sgt", "*LUIGI* CALDANA"], ["2º Sgt", "FILIPE PEREIRA *MACHADO*"], ["2º Sgt", "*MARLA* MARINHO DA COSTA"], ["2º Sgt", "*MAURO FIGUEIREDO* MAIA JUNIOR"], ["2º Sgt", "*LUCAS CARDOZO* JORGE"], ["3º Sgt", "PEDRO HENRIQUE DOS SANTOS *TAVARES*"], ["3º Sgt", "YUDE FERNANDO FERREIRA *FLORENTINO*"], ["3º Sgt", "MURILO CHAVES *MONTEIRO*"], ["3º Sgt", "*CAVALHEIRO*"], ["3º Sgt", "YAN GUSTAVO DE MELO *FARIAS*"], ["3º Sgt", "MARCO AURELIO *GOUDINHO*"], ["3º Sgt", "DANIEL CARDOSO *DOS SANTOS*"], ["3º Sgt", "ELIAS *LOPES* DO NASCIMENTO"], ["Cb EP", "KELVYN RIBEIRO *DE MOURA*"], ["Cb EP", "YTALO LUIZ *BOAVENTURA* DOS SANTOS"], ["Cb EP", "ORLANDO BOSCO DA *CUNHA* NETO"], ["Cb EP", "EDER APARECIDO DOS *SANTOS*"], ["Cb EP", "THYAGO SANTOS DE *MORAES*"], ["Cb EP", "EDIGLES *LOURENÇO* DA SILVA"], ["Cb EP", "BRENO VITOR SILVA *BARROS*"], ["Cb EP", "GUILHERME *MARCELINO* AMARAL DE SOUZA"], ["Cb EP", "*ERIC* DE SOUZA ANGUEIRA SILVA"], ["Cb EP", "PETERSON PINHEIRO *CAIRES*"], ["Cb EP", "JONATHAN *ARAUJO* DE OLIVEIRA SOUZA"], ["Cb EP", "VINICIUS OLIVEIRA *DOURADO*"], ["Sd EP", "KAIKE *KENJI* DE PAIVA CHOYAMA"], ["Sd EP", "KAIQUE FLORENCIO *JOSINO*"], ["Sd EP", "VINICIUS HENRIQUE DA *SILVA* VIEIRA"], ["Sd EV", "DANIEL ABREU *BARBOSA*"], ["Sd EV", "FELIPE *SOUSA* DA ROCHA"], ["Sd EV", "GUILHERME RUFINO *PAPALEO*"], ["Sd EV", "GUSTAVO OLIVEIRA *DEL NERO*"], ["Sd EV", "MATHEUS *MAGRO*"], ["Sd EV", "PEDRO HENRIQUE BARBOSA DE *FRANCA*"], ["Sd EV", "TALES DE CAMARGO *GHIU*"], ["Sd EV", "*BRAYAN* DE ALMEIDA CAVALCANTE"], ["Sd EV", "LUIZ FELIPE *SERAFIM* CABRAL"]];
+
+// Ordem fixa dos postos para exibir sempre na mesma sequência hierárquica
+const ORDEM_POSTOS = ["Maj","2º Ten","S Ten","1º Sgt","2º Sgt","3º Sgt","Cb EP","Sd EP","Sd EV"];
+
+const estado = {}; // id -> {falta:bool, destino:string}
+let db = null, col = null;
+
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtNome = n => esc(n).replace(/\*(.+?)\*/g, '<b>$1</b>');
+const limpo = n => n.replace(/\*/g, '');
+const idDe = i => 'm' + String(i + 1).padStart(2, '0');
+
+function lsGet(){ try { return JSON.parse(localStorage.getItem('perseu_chamada') || '{}'); } catch(e){ return {}; } }
+function lsSet(){ try { localStorage.setItem('perseu_chamada', JSON.stringify(estado)); } catch(e){} }
+
+const ul = document.getElementById('lista');
+MILITARES.forEach(([posto, nome], i) => {
+  const id = idDe(i);
+  const li = document.createElement('li');
+  li.id = id;
+  li.innerHTML = `<div class="linha"><span class="ord">${i+1}</span>
+    <div class="info"><div class="posto">${esc(posto)}</div><div class="nome">${fmtNome(nome)}</div></div>
+    <button class="tog" aria-pressed="false">Presente</button></div>
+    <div class="dest"><input list="sug" placeholder="Destino / motivo da falta" maxlength="120"></div>`;
+  ul.appendChild(li);
+  li.querySelector('.tog').addEventListener('click', () => {
+    const atual = estado[id] || {falta:false, destino:''};
+    salvar(id, {falta: !atual.falta, destino: atual.destino || ''});
+  });
+  const inp = li.querySelector('input');
+  let t = null;
+  inp.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const atual = estado[id] || {falta:true, destino:''};
+      if ((atual.destino || '') !== inp.value) salvar(id, {falta: atual.falta, destino: inp.value});
+    }, 600);
+  });
+});
+
+// Calcula quantidade total / presentes / faltas por posto
+function calcularPorPosto(){
+  const mapa = {};
+  MILITARES.forEach(([posto], i) => {
+    if (!mapa[posto]) mapa[posto] = {total:0, presente:0, falta:0};
+    mapa[posto].total++;
+    const e = estado[idDe(i)] || {};
+    if (e.falta) mapa[posto].falta++; else mapa[posto].presente++;
+  });
+  return mapa;
+}
+
+function pintarPostos(){
+  const mapa = calcularPorPosto();
+  const corpo = document.getElementById('postosBody');
+  corpo.innerHTML = '';
+  const postosOrdenados = [...ORDEM_POSTOS, ...Object.keys(mapa).filter(p => !ORDEM_POSTOS.includes(p))];
+  postosOrdenados.forEach(posto => {
+    if (!mapa[posto]) return;
+    const d = mapa[posto];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="nomeposto">${esc(posto)}</td><td>${d.total}</td><td>${d.presente}</td><td>${d.falta}</td>`;
+    corpo.appendChild(tr);
+  });
+}
+
+document.getElementById('bPostos').addEventListener('click', () => {
+  const box = document.getElementById('postosBox');
+  box.classList.toggle('on');
+  document.getElementById('bPostos').textContent = box.classList.contains('on')
+    ? 'Ocultar quantidade por posto/graduação ▴'
+    : 'Ver quantidade por posto/graduação ▾';
+});
+
+function pintar(){
+  let f = 0;
+  MILITARES.forEach((m, i) => {
+    const id = idDe(i), li = document.getElementById(id), e = estado[id] || {};
+    const falta = !!e.falta;
+    if (falta) f++;
+    li.classList.toggle('falta', falta);
+    const b = li.querySelector('.tog');
+    b.textContent = falta ? 'Falta' : 'Presente';
+    b.setAttribute('aria-pressed', falta);
+    const inp = li.querySelector('input');
+    if (document.activeElement !== inp) inp.value = e.destino || '';
+  });
+  document.getElementById('cTotal').textContent = 'Total: ' + MILITARES.length;
+  document.getElementById('cPres').textContent = 'Presentes: ' + (MILITARES.length - f);
+  document.getElementById('cFalta').textContent = 'Faltas: ' + f;
+  pintarPostos();
+}
+
+const fila = {};
+function salvar(id, val){
+  estado[id] = val;
+  pintar();
+  lsSet();
+  if (!col) return;
+  fila[id] = (fila[id] || Promise.resolve()).then(() =>
+    col.doc(id).set({falta: !!val.falta, destino: (val.destino || '').slice(0,120)})
+  ).then(() => setStatus('Salvo online – visível em qualquer aparelho'))
+   .catch(() => setStatus('Não consegui salvar online. A marcação ficou só neste aparelho.'));
+}
+
+function setStatus(t){ document.getElementById('status').textContent = t; }
+
+document.getElementById('bCopiar').addEventListener('click', async () => {
+  const faltas = MILITARES.map((m,i)=>[m,estado[idDe(i)]]).filter(([,e])=>e && e.falta);
+  let txt = 'EXERCÍCIO DE CAMPANHA PERSEU DA CIA C / 2ª DE\n';
+  txt += `Total: ${MILITARES.length} | Presentes: ${MILITARES.length - faltas.length} | Faltas: ${faltas.length}\n`;
+
+  const mapa = calcularPorPosto();
+  txt += '\nPor posto/graduação:\n';
+  [...ORDEM_POSTOS, ...Object.keys(mapa).filter(p => !ORDEM_POSTOS.includes(p))].forEach(posto => {
+    if (!mapa[posto]) return;
+    const d = mapa[posto];
+    txt += `${posto}: ${d.total} (Pres: ${d.presente} | Falta: ${d.falta})\n`;
+  });
+
+  if (faltas.length){
+    txt += '\nFALTAS:\n';
+    faltas.forEach(([[p,n],e],k)=>{ txt += `${k+1}. ${p} ${limpo(n)}${e.destino ? ' – ' + e.destino : ''}\n`; });
+  }
+  try { await navigator.clipboard.writeText(txt); const c=document.getElementById('copiado'); c.style.display='block'; setTimeout(()=>c.style.display='none',1800); }
+  catch(e){ setStatus('Não foi possível copiar neste aparelho.'); }
+});
+
+function gerarPdf(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const M = 10, W = 190, cols = [10, 20, 82, 22, 56];
+  const xs = cols.reduce((a,w,i)=>{a.push(i?a[i-1]+cols[i-1]:M);return a;},[]);
+  const hoje = new Date();
+  const dataTxt = hoje.toLocaleDateString('pt-BR') + ' ' + hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const nF = MILITARES.filter((m,i)=>(estado[idDe(i)]||{}).falta).length;
+  let y = 14;
+  doc.setFont('helvetica','bold'); doc.setFontSize(13);
+  doc.text('EXERCÍCIO DE CAMPANHA PERSEU DA CIA C / 2ª DE', 105, y, {align:'center'}); y += 6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text(`Chamada em ${dataTxt}   |   Total: ${MILITARES.length}   Presentes: ${MILITARES.length-nF}   Faltas: ${nF}`, 105, y, {align:'center'}); y += 7;
+
+  const mapa = calcularPorPosto();
+  const postosOrdenados = [...ORDEM_POSTOS, ...Object.keys(mapa).filter(p => !ORDEM_POSTOS.includes(p))].filter(p=>mapa[p]);
+  doc.setFont('helvetica','bold'); doc.setFontSize(9);
+  doc.text('Quantidade por posto/graduação:', M, y); y += 4.5;
+  doc.setFont('helvetica','normal');
+  const colW = 38;
+  let cx = M, maxY = y;
+  postosOrdenados.forEach((posto, idx) => {
+    const d = mapa[posto];
+    const texto = `${posto}: ${d.total} (P:${d.presente} F:${d.falta})`;
+    if (idx>0 && idx % 5 === 0){ cx = M; y += 5; }
+    doc.text(texto, cx, y);
+    cx += colW;
+    if (y > maxY) maxY = y;
+  });
+  y = maxY + 6;
+
+  const cab = () => {
+    doc.setFillColor(75,83,32); doc.rect(M, y, W, 7, 'F');
+    doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    ['Ord','Posto/Grad','Nome completo','Situação','Destino'].forEach((t,i)=>doc.text(t, xs[i]+cols[i]/2, y+4.8, {align:'center'}));
+    doc.setTextColor(0); y += 7;
+  };
+  cab();
+  MILITARES.forEach(([posto, nome], i) => {
+    const e = estado[idDe(i)] || {};
+    const falta = !!e.falta;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    const dest = falta ? doc.splitTextToSize(e.destino || '', cols[4]-3) : [''];
+    const h = Math.max(6, 2.5 + dest.length * 3.8);
+    if (y + h > 287){ doc.addPage(); y = 12; cab(); }
+    if (falta){ doc.setFillColor(253,236,234); doc.rect(M, y, W, h, 'F'); }
+    doc.setDrawColor(0); doc.setLineWidth(0.2);
+    xs.forEach((x,k)=>doc.rect(x, y, cols[k], h));
+    const ty = y + 4.2;
+    doc.text(String(i+1), xs[0]+cols[0]/2, ty, {align:'center'});
+    doc.text(posto, xs[1]+cols[1]/2, ty, {align:'center'});
+    let x = xs[2] + 1.5;
+    doc.setFont('helvetica','normal');
+    const esp = doc.getTextWidth('a a') - doc.getTextWidth('aa');
+    nome.split('*').forEach((p,k)=>{
+      doc.setFont('helvetica', k%2 ? 'bold':'normal');
+      p.split(' ').forEach(w => { if (!w) return; doc.text(w, x, ty); x += doc.getTextWidth(w) + esp; });
+    });
+    doc.setFont('helvetica', falta ? 'bold':'normal');
+    if (falta) doc.setTextColor(180,35,24);
+    doc.text(falta ? 'Falta' : 'Presente', xs[3]+cols[3]/2, ty, {align:'center'});
+    doc.setTextColor(0); doc.setFont('helvetica','normal');
+    if (falta && dest[0]) doc.text(dest, xs[4]+1.5, ty);
+    y += h;
+  });
+  return doc.output('blob');
+}
+
+document.getElementById('bPdf').addEventListener('click', async () => {
+  if (!window.jspdf){ setStatus('O gerador de PDF ainda não carregou. Tente de novo em instantes.'); return; }
+  let dl = null;
+  try { dl = await claude.use('downloads'); } catch(e){}
+  if (!dl){ setStatus('Este aparelho não permite salvar ou compartilhar arquivos por aqui.'); return; }
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  const nomeArq = `Chamada_Perseu_${p(d.getDate())}-${p(d.getMonth()+1)}-${d.getFullYear()}.pdf`;
+  try { await dl.save({filename: nomeArq, data: gerarPdf()}); }
+  catch(err){
+    const c = err && err.code;
+    if (c === 'declined') return;
+    if (c === 'rate_limited') setStatus('Já existe um envio aberto. Aguarde e tente de novo.');
+    else setStatus('Não foi possível gerar o PDF neste aparelho.');
+  }
+});
+
+const dlg = document.getElementById('dlg');
+document.getElementById('bLimpar').addEventListener('click', () => dlg.classList.add('on'));
+document.getElementById('dNao').addEventListener('click', () => dlg.classList.remove('on'));
+document.getElementById('dSim').addEventListener('click', () => {
+  dlg.classList.remove('on');
+  MILITARES.forEach((m,i)=>{ const id=idDe(i), e=estado[id]; if (e && (e.falta || e.destino)) salvar(id,{falta:false,destino:''}); });
+});
+
+Object.assign(estado, lsGet());
+pintar();
+setStatus('Conectando…');
+
+(async () => {
+  let timer = setTimeout(() => setStatus('Sem conexão online: as marcações ficam só neste aparelho.'), 10000);
+  try {
+    db = await claude.use('db');
+  } catch(e){ db = null; }
+  if (!db){ clearTimeout(timer); setStatus('Sem conexão online: as marcações ficam só neste aparelho.'); return; }
+  col = db.collection('faltas');
+  col.onSnapshot(snap => {
+    clearTimeout(timer);
+    const docs = snap.docs || [];
+    const remoto = {};
+    docs.forEach(d => { const v = (typeof d.data === 'function') ? d.data() : d.data; remoto[d.id] = {falta: !!(v && v.falta), destino: (v && v.destino) || ''}; });
+    MILITARES.forEach((m,i)=>{ const id=idDe(i); estado[id] = remoto[id] || {falta:false, destino:''}; });
+    lsSet(); pintar();
+    setStatus('Salvo online – visível em qualquer aparelho');
+  }, () => { clearTimeout(timer); setStatus('Não consegui carregar online. Usando dados deste aparelho.'); });
+})();
+</script>
+</body>
+</html>
